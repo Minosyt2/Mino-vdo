@@ -1,210 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>MinoşVdo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MinoşVdo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(270deg, red, orange, yellow, green, cyan, blue, violet);
+      background-size: 1400% 1400%;
+      animation: rainbow 15s ease infinite;
+      color: white;
+    }@keyframes rainbow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #0f0f0f;
-  color: white;
+.container {
+  max-width: 500px;
+  margin: 40px auto;
+  background: rgba(0,0,0,0.6);
+  padding: 20px;
+  border-radius: 16px;
 }
-header {
-  background: #ff0000;
-  padding: 10px;
-  text-align: center;
-  font-size: 22px;
-}
-.page { display:none; padding:15px; }
+
+h1 { text-align: center; }
+
 input, button {
-  padding:10px;
-  margin:5px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
 }
-.video {
-  background:#222;
-  padding:10px;
-  margin-bottom:15px;
+
+button {
+  background: #00ffcc;
+  font-size: 16px;
+  cursor: pointer;
 }
-iframe { width:100%; height:200px; }
-.short iframe { height:350px; }
-nav {
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:#111;
-  display:flex;
-  justify-content:space-around;
+
+.captcha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  background: rgba(255,255,255,0.1);
+  padding: 10px;
+  border-radius: 10px;
 }
-nav button {
-  background:none;
-  color:white;
-  font-size:16px;
+
+video {
+  width: 100%;
+  margin-top: 15px;
+  border-radius: 12px;
 }
-</style>
+
+  </style>
 </head>
-
 <body>
+  <div class="container">
+    <h1>🌈 MinoşVdo</h1><input type="file" id="videoInput" accept="video/*" />
 
-<header>📺 MinoşVdo</header>
-
-<audio id="bgMusic" loop>
-  <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_98c6c91f8e.mp3">
-</audio>
-
-<!-- AUTH -->
-<div id="auth" class="page">
-  <h2>Login</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password">
-  <button onclick="login()">Login</button>
-
-  <h3>Create account</h3>
-  <input id="channelName" placeholder="Channel name">
-  <button onclick="register()">Create</button>
+<div class="captcha">
+  <input type="checkbox" id="robotCheck" />
+  <label for="robotCheck">Я не робот 🤖</label>
 </div>
 
-<!-- HOME -->
-<div id="home" class="page">
-  <input id="search" placeholder="Search" oninput="loadVideos()">
-  <div id="videos"></div>
-</div>
+<button onclick="publishVideo()">Опубликовать 🚀</button>
 
-<!-- SHORTS -->
-<div id="shorts" class="page">
-  <div id="shortVideos"></div>
-</div>
+<video id="preview" controls hidden></video>
 
-<!-- CREATE -->
-<div id="create" class="page">
-  <input id="title" placeholder="Title">
-  <input id="link" placeholder="YouTube embed link">
-  <select id="type">
-    <option value="video">Video</option>
-    <option value="short">Short</option>
-  </select>
-  <button onclick="publish()">Publish</button>
-</div>
+  </div>  <script>
+    function publishVideo() {
+      const file = document.getElementById('videoInput').files[0];
+      const check = document.getElementById('robotCheck').checked;
+      const video = document.getElementById('preview');
 
-<!-- CHANNEL -->
-<div id="channel" class="page">
-  <h2 id="channelTitle"></h2>
-  <div id="channelVideos"></div>
-</div>
+      if (!file) {
+        alert('Выбери видео 📹');
+        return;
+      }
 
-<nav>
-  <button onclick="openPage('home')">🏠</button>
-  <button onclick="openPage('shorts')">🎬</button>
-  <button onclick="openPage('create')">➕</button>
-  <button onclick="toggleMusic()">🎵</button>
-</nav>
+      if (!check) {
+        alert('Подтверди что ты не робот 🤖');
+        return;
+      }
 
-<script>
-let user = JSON.parse(localStorage.getItem("user"));
-let videos = JSON.parse(localStorage.getItem("videos")) || [];
+      const url = URL.createObjectURL(file);
+      video.src = url;
+      video.hidden = false;
 
-function openPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.style.display="none");
-  document.getElementById(id).style.display="block";
-  if(id==="home") loadVideos();
-  if(id==="shorts") loadShorts();
-}
-
-function register(){
-  user={email:email.value,password:password.value,channel:channelName.value};
-  localStorage.setItem("user",JSON.stringify(user));
-  alert("Account created");
-}
-
-function login(){
-  const u=JSON.parse(localStorage.getItem("user"));
-  if(u && u.email===email.value && u.password===password.value){
-    user=u;
-    openPage("home");
-  } else alert("Wrong data");
-}
-
-function publish(){
-  videos.push({
-    title:title.value,
-    link:link.value,
-    type:type.value,
-    channel:user.channel,
-    likes:0,
-    comments:[]
-  });
-  localStorage.setItem("videos",JSON.stringify(videos));
-  alert("Published!");
-}
-
-function like(i){
-  videos[i].likes++;
-  save();
-  loadVideos();
-}
-
-function comment(i){
-  const text=prompt("Comment:");
-  if(text){
-    videos[i].comments.push(text);
-    save();
-    loadVideos();
-  }
-}
-
-function openChannel(name){
-  openPage("channel");
-  channelTitle.innerText=name;
-  channelVideos.innerHTML="";
-  videos.filter(v=>v.channel===name).forEach(v=>{
-    channelVideos.innerHTML+=`<p>${v.title}</p>`;
-  });
-}
-
-function loadVideos(){
-  const q=search.value.toLowerCase();
-  videosDiv.innerHTML="";
-  videos.forEach((v,i)=>{
-    if(v.type==="video" && v.title.toLowerCase().includes(q)){
-      videosDiv.innerHTML+=`
-      <div class="video">
-        <h3>${v.title}</h3>
-        <small onclick="openChannel('${v.channel}')">👤 ${v.channel}</small>
-        <iframe src="${v.link}"></iframe>
-        <button onclick="like(${i})">👍 ${v.likes}</button>
-        <button onclick="comment(${i})">💬 ${v.comments.length}</button>
-      </div>`;
+      alert('Видео опубликовано! 🎉');
     }
-  });
-}
-
-function loadShorts(){
-  shortVideos.innerHTML="";
-  videos.filter(v=>v.type==="short").forEach(v=>{
-    shortVideos.innerHTML+=`
-    <div class="short"><iframe src="${v.link}"></iframe></div>`;
-  });
-}
-
-function toggleMusic(){
-  const m=document.getElementById("bgMusic");
-  m.paused?m.play():m.pause();
-}
-
-function save(){
-  localStorage.setItem("videos",JSON.stringify(videos));
-}
-
-if(user) openPage("home");
-else auth.style.display="block";
-
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
-
-</body>
+  </script></body>
 </html>
